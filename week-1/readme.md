@@ -4,11 +4,11 @@ Muhamad Yoga Mahendra |1806205256 | System Programming - B
 
 ## Table of Content
 
-- [Definition of System Programming](Definition-of-System-Programming)
-- [System Programming vs Application Programming](System-Programming-vs-Application-Programming)
+- [Definition of System Programming](#Definition-of-System-Programming)
+- [System Programming vs Application Programming](#System-Programming-vs-Application-Programming)
 - [Scripting Programming Language](#Scripting-Programming-Language)
-- [Operating Systems and Kernel](Operating-Systems-and-Kernel)
-- [Some frequently-used Linux commands](Some-frequently-used-Linux-commands)
+- [Operating Systems and Kernel](#Operating-Systems-and-Kernel)
+- [Some frequently-used Linux commands](#Some-frequently-used-Linux-commands)
 - [Program vs Process](#Program-vs-Process)
 - [Proc File System](#Proc-File-System)
 - [Filesystem Hierarchy and address paths](#Filesystem-Hierarchy-and-address-paths)
