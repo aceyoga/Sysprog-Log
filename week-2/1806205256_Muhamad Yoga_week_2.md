@@ -6,7 +6,7 @@ Muhamad Yoga Mahendra |1806205256 | System Programming - B
 
 - [System Call](#System-Call)
 - [System Call Execution Steps](#System-Call-Execution-Steps)
-- [Library Functions](Library Functions)
+- [Library Functions](#Library Functions)
 - [The GNU C Library (glibc)](#The-GNU-C-Library-(glibc))
 - [System Call and Library Functions Error Handling](#System-Call-and-Library-Functions-Error-Handling)
 - [References](#References)
