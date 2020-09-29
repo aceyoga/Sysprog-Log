@@ -25,7 +25,7 @@ ______
 
 _____
 
-![System Call Execution Step](week-2/System Call Execution Step.png)
+![System Call Execution Step](/week-2/System Call Execution Step.png)
 
 Firstly, the application calls an Library Function that wraps the system call. The function must pass all arguments to the system call trap-handling routine, via the stack. The function then will copy the arguments received from the stack to registers specific to the system call.    Then, the function inserts the system call number to a specific CPU register for identifying which system call is called. The function executes the trap machine instruction(that int 0x80), which causes the processor to switch to kernel mode and execute the code in the system’s trap vector at 0x80.
 
