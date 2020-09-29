@@ -25,7 +25,11 @@ ______
 
 _____
 
+![System Call Execution Step](\week-2\System Call Execution Step.png)
 
+Firstly, the application calls an Library Function that wraps the system call. The function must pass all arguments to the system call trap-handling routine, via the stack. The function then will copy the arguments received from the stack to registers specific to the system call.    Then, the function inserts the system call number to a specific CPU register for identifying which system call is called. The function executes the trap machine instruction(that int 0x80), which causes the processor to switch to kernel mode and execute the code in the system’s trap vector at 0x80.
+
+The kernel responds to the trap, and invokes a system call routine to handle the trap. The system call saves the previous register values filled by the function to the kernel stack, checks the system call number validity, and then invokes the requested system call. If the system call receives arguments, it will first validate the arguments. Then the system call performs the requested task, then returns the status number to the trap handler routine. The register values from the kernel stack is restored, and the system call return value is placed on the stack. Then it returns to the wrapper function and switches the processor back to user mode, then returns again to the application.
 
 ______
 
@@ -35,13 +39,23 @@ ______
 
 The library functions are a set of functions that include and expands the standard C library. There are so many functions, each with its own specific purpose ranging from simply opening a file and printing the content to terminal(cat), to complex functions like math functions. While many library functions doesn't use System Calls(since the context is different thus system call is not needed), some functions are built on top of a system calls(like a wrapper function). Some implementations is done to provide a more "user-friendly" function and more diverse function capable of accepting many/complex options that suits the user's needs, like the printf() function that enables output formatting, instead of the write() system call it wraps that only provides byte output service.
 
+Some Library functions that wraps one/more system calls are:
+
+```
+printf(), wraps write() system call;
+fopen(), wraps open() system call;
+malloc(), wraps the brk() and sbrk() system call.
+```
+
+
+
 _____
 
 ## The GNU C Library (glibc)
 
 _____
 
-
+The GNU C Library project provides *the* core libraries for the GNU system and GNU/Linux systems, as well as many other systems that use Linux as the kernel. These libraries provide critical APIs including ISO C11, POSIX.1-2008, BSD, OS-specific APIs and more. These APIs include such foundational facilities as `open`, `read`, `write`, `malloc`, `printf`, `getaddrinfo`, `dlopen`, `pthread_create`, `crypt`, `login`, `exit` and more.
 
 _____
 
@@ -51,6 +65,7 @@ _____
 
 In C, errors are not automatically handled. If an error occurs in a C program, the program will return an error number according to what error occurs. The program is expected to handle errors on their own, by relying on the error numbers provided by the process. The errno command(from moreutils package) lists all 133 error numbers, listed below:
 
+```
 yoga@LocalYoga:~$ errno -l
 EPERM 1 Operation not permitted
 ENOENT 2 No such file or directory
@@ -185,6 +200,7 @@ EOWNERDEAD 130 Owner died
 ENOTRECOVERABLE 131 State not recoverable
 ERFKILL 132 Operation not possible due to RF-kill
 EHWPOISON 133 Memory page has hardware error
+```
 
 Some System Calls might return -1 value even if the call was successful. This false alarm can be handled by setting the global variable errno to 0 before calling, and checking the value if the System Call returns -1. If the errno value changes, then an error has occurred and the errno should now contain the error number.
 
@@ -195,9 +211,8 @@ _____
 _____
 
 1. The Linux Programming Interface: A Linux and UNIX System Programming Handbook (Page 43:44, 46, 48:49)
-
 2. https://man7.org/linux/man-pages/man2/syscalls.2.html
-
-3. https://man7.org/linux/man-pages/man3/errno.3.html
-
+3. http://www.gnu.org/software/libc/
+4. https://man7.org/linux/man-pages/man3/errno.3.html
 5. https://man7.org/linux/man-pages/man2/setpriority.2.html
+
