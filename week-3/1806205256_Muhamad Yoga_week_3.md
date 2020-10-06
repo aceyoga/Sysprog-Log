@@ -37,7 +37,7 @@ The complete stat() information field and description can be seen below:
 
 ![Stat Structure](https://github.com/aceyoga/Sysprog-Log/blob/master/week-3/Stat-Structure.jpg)
 
-![Stat Description](https://github.com/aceyoga/Sysprog-Log/blob/master/week-3/Stat-Desc.JPG)
+![Stat Description](https://github.com/aceyoga/Sysprog-Log/blob/master/week-3/Stat-Desc.jpg)
 
 ______
 
