@@ -90,6 +90,11 @@ There are 8 different Flags for file access modes, listed below:
 
 ![Flag Modes](https://github.com/aceyoga/Sysprog-Log/blob/master/week-3/Flag-Modes.JPG)
 
+There are several consequences if we don’t close a file at all:
+
+- System will ran out of file descriptors/handles, failing any more open() system calls.
+- System will close the file automatically(If there’s a buffered data in queue for that file, it’ll be lost unless the user knows exactly where the data is on the memory.)
+
 _____
 
 ## References
@@ -104,5 +109,7 @@ _____
 6. man daemon 1
 7. https://man7.org/tlpi/
 8. [https://scele.cs.ui.ac.id/pluginfile.php/80771/mod_resource/content/1/03%20-%20The%20Stat%20System%20Call.pdf](https://scele.cs.ui.ac.id/pluginfile.php/80771/mod_resource/content/1/03 - The Stat System Call.pdf), page 17-18, 24
-9. 
+9. https://stackoverflow.com/questions/8175827/what-happens-if-i-dont-call-fclose-in-a-c-program
+10. https://stackoverflow.com/questions/13982478/what-is-file-hole-and-how-can-it-be-used
+11. https://www.systutorials.com/handling-sparse-files-on-linux
 
