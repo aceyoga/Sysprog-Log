@@ -5,9 +5,7 @@ Muhamad Yoga Mahendra |1806205256 | System Programming - B
 ## Table of Content
 
 - [I/O Buffering](#I/O-Buffering)
-- [Forking](#Forking)
-- [The ps command(Process Snapshot)](#The-ps-command(Process-Snapshot))
-- [Linux Environment Variables](#Linux-Environment-Variables)
+- [The make](#The-make)
 - [References](#References)
 
 _________________________________________________________________________________________________________________________________________________________________________
@@ -39,6 +37,18 @@ In this test i'll use the dd function, which copies a file to another file with 
 
 The second test uses buffer size of 1/2 of the first test, and block count twice the first test. However, the second test runs at almost 3x the speed of the first test, and a lower CPU time. This shows that in harddisk, smaller buffer size leads to faster and more effective I/O runtime. It is caused by the faster read/write speed since smaller buffer size means the buffer will be filled faster and needs to be flushed more often.
 
+
+
+_____
+
+## The make
+
+_____
+
+The make command is a versatile utility used to maintain software projects / groups or programs. The make utility can automatically determine which piece of a large program needs recompiling, or which program needs to be recompiled because of changes. In order to use make, a makefile is needed. Makefile is a file that stores records and descriptions of relationships between programs inside the group, and stores the command/arguments for compiling/updating the files/programs.
+
+This utility is not limited to programs, thus any files requiring update from other files can use make to simplify the update process. Once a group of files/program has a makefile written for them, a single make call is needed to update the whole group. 
+
 _____
 
 ## References
@@ -48,4 +58,6 @@ _____
 1. man time
 
 2. man dd
+
+3. man make
 
