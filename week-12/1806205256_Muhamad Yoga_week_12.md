@@ -1,102 +1,177 @@
-# System Programming Logbook Week  11
+# System Programming Logbook Week  12
 
 Muhamad Yoga Mahendra |1806205256 | System Programming - B
 
 ## Table of Content
 
-- [Daemon 101](#Daemon_101)
-- [Daemon VS Background Processes](#Daemon_VS_Background_Processes)
-- [Daemon Examples in Linux OS](#Daemon_Examples_in_Linux_OS)
-- [The nohup, disown, and usage.](#The_nohup,_disown,_and_usage.)
-- [How To Daemonize a Process](#How_To_Daemonize_a_Process)
-- [Using Daemons for Scheduling
+- [Booting Terminologies](Booting_Terminologies)
+- [Boot Sequence](Boot_Sequence)
+- [Customizable Startup Script](Customizable_Startup_Script)
+- [BIOS and MBR vs UEFI and GPT](BIOS_and_MBR_vs_UEFI_and_GPT)
+- [The Init and Systemd](The_Init_and_Systemd)
+- [Kernel 101](Kernel_101)
+- [Kernel Compiling](Kernel_Compiling)
 - [References](#References)
 
 ![nama gambar](https://github.com/aceyoga/Sysprog-Log/blob/master/week-10/namafile.tipe)
 
 _________________________________________________________________________________________________________________________________________________________________________
 
-## Daemon 101
+## Booting Terminologies
 
 _____
 
-Daemon is a special process that has a long lifetime, usually from system startup until system shutdown. Daemons are usually created for a specific task which requires constant uptime. While the daemon is up and running, it needs to make sure that there's only one instance of it running at any given time. The daemon must also make sure that there's no memory leak happening. If it happens, it must clean it before something bad happens. When the system is shutting down, all daemon will receive a SIGTERM from init process 5 seconds before the SIGKILL sent by init process is received. In this 5 seconds, all daemon must immediately perform cleanup routines.
+In the booting process, there are many programs, procedures, and concepts being used. Some of the most important are:
 
-Daemons are required to close all standard file descriptors to prevent any unwanted problems, like running out of file descriptors, the daemon accidentally writing to the file descriptors, etc. Daemons usually have no controlling terminal. 
-
-_____
-
-## Daemon VS Background Processes
-
-_____
-
-Background Processes is a type of processes that runs in the background, mostly without getting user input. Usually background processes are used for logging, scheduling, and other automated task. In a Unix/Linux-based systems, a program an be initiated as background process can be directly created by using the "&" operator, and then the process will run in the background. The process can be reconnected to the parent terminal by using the *fg* utility, and resumes it's operation by using *bg* utility. The *jobs* utility can list all processes(including the background ones) that is associated with the current terminal, and is usually used to get the PID of background processes.
-
-Meanwhile, Daemon Processes is a special type of background process with the longest uptime(usually from system startup-shutdown), minimal resource usage and usually no user input at all. The jobs utility can't be used to get the PID of daemon processes since the daemons themselves aren't associated with any terminal.	
-
-_____
-
-## Daemon Examples in Linux OS
+- Loader
+  - A Program that moves bits from disk (usually) to memory and then transfers CPU control to the newly “loaded” bits (executable).
+- Bootloader
+  - Program that loads the chosen kernel from Boot Manager.
+- Boot PROM(BIOS/UEFI)
+  - Persistent code that is “already loaded” on power-up. Act as the program that manages pre-booting process.
+  - BIOS is shorthand for Basic Input/Output System. 
+  - UEFI is shorthand for Unified Extensible Firmware Interface.
+- Boot Manager
+  - The program that lets you choose which init program to use.
 
 _____
 
-There are several examples of daemon processes in Linux OS. Some of them are:
-
-- systemd
-  - This daemon is the system and service manager for systems implementing Linux OS. Usually, this process takes the PID 1(as the init process), running and maintaining user-space services.
-- syslogd
-  - The syslogd runs a syslog program in the background as a daemon process, logging messages of system output as it happens.
-- sshd
-  - This daemon runs the ssh background process, providing secure and encrypted communications between two untrusted hosts over an insecure network. The daemon will listen for any incoming connection, then handles it with TCP/IP rules.
+## Boot Sequence
 
 _____
 
-## The nohup, disown, and usage.
+The boot sequence can be described effectively by the following picture taken from Sysprog slide 8:
+
+![bootseq](https://github.com/aceyoga/Sysprog-Log/blob/master/week-12/bootseq.jpg)
+
+In the above picture, the Boot sequence starts from the moment the power button is pressed. Then, the BIOS executes and perform a system checkup(Checking hardware health, temperature, condition, etc) before continuing to the next step. After finishing system checkup, BIOS executes the MBR(Master Boot Record, the first 512 bytes on disk). The MBR loads the first 512 bytes(GRUB stage 1), then the first 30KB of the disk which contains the file system driver(GRUB stage 1,5), and then GRUB loads the kernel selection menu from menu.lst. At this point, the user can select which kernel to use(if there are more than 1 kernel inside /boot/).
+
+After the kernel image is loaded, GRUB loads its initial RAM disk, and if the kernel isn't compiled with the required drivers it will try to find all needed drivers from driver collections stored in RAM disk, in which the file is named initrd/initramfs. Some of the modules stored inside is filesystem, harddisk, network adapters, input devices, etc.
+
+When the kernel has every resource needed to start the complete OS, it mounts the ROOT filesystem to /, then it executes init on /. The init process then starts running everything written in a Startup/Boot Script(Running daemons, background services, preparing drivers, etc).
+
+Finally, after everything is done, user can now login and starts using the machine.
 
 _____
 
-The nohup(no hang up) is a command used to run commands/start processes that stays running even after the terminal/shell invoking it terminates. Any command/processes that are run by using nohup will ignore any incoming hangup signals.
-
-The disown is a command used to remove a job/background process from a job table(can be seen with jobs command). Disown have many parameters: -a will disown every job in the job table; %n will disown any processes with job id n; -r will disown any jobs currently running.
-
-Both have their own uses. For example:
-
-- The nohup command is usually used for starting processes that stays running and ignoring hangup signals.
-- The disown command is used for already running processes to make them stays running in the background. Since the job is removed from the job list there will be no termination signal unless it got directly terminated/other errors.
-
-There is another way of creating background processes, which is using "&".
+## Customizable Startup Script
 
 _____
 
-## How To Daemonize a Process
+The Startup Script is a special script used to "Configure" everything the kernel need to do before finishing the boot process. We can do many thing with this, some examples are:
+
+- Setting up processor frequencies(overclocking/underclocking)
+- Set kernel voltages
+- Set ondemand scheduler parameters
+- Start system/user made daemons(cron, apache, sshd, systemd, etc)
+- Load additional kernel modules
+- Turn on additional swapping partitions
+- Mount additional partitions(/home, /usr, /var, /mount, /etc, etc)
+- Run custom made programs
+- Etc
+
+Before tempering with a Startup Script, it's best to do a backup beforehand, to prevent unwanted consequences(kernel failing to load, panicking, etc).
+
+## BIOS and MBR vs UEFI and GPT
 
 _____
 
-Process Group is a....
+BIOS is shorthand of Basic Input Output System. A low-level software used as the proven software for starting up booting sequence. The BIOS runs a Power-On Self Test upon machine power-on, checking every hardware is healthly, working properly, and is correctly configured. After checking everything and makes sure it's right, BIOS looks for a Master Boot Record and used it to run the bootloader of the machine's currently installed OS.
 
-In order to daemonize a process we must first...
+The UEFI(Unified Extensible Firmware Interface) is the replacement software to the BIOS. It's not limited by BIOS limitations, like 16-bit processor mode requirement, 1MB of execution space, etc. The UEFI standard can boot from drives with sizes larger than 2.2 TB, with the theoretical limit reaching 9.4 zettabytes. This feat is achieved by the use of GPT(GUID Partition Table) Partitioning Scheme(Instead of BIOS's MBR partitioning scheme). UEFI can run in 32-bit/64-bit processor mode and has faster boot process time than BIOS. Some UEFI screens has a interactable GUI, even if most PC/Laptop still have text-based one.
 
-Then, the setsid command needs to be called. This is done for....
-
-The session created by setsid...
-
-There is a way to differentiate a daemon process and a normal process. One of the easiest way is to look at its PPID(Parent PID). A daemon process will usually have a very small PPID, usually 1 which is the init process. Another way is to....
-
-Reinitializing a daemon process can be done by using SIGHUP signal.
+In short, UEFI and GPT will replace BIOS and MBR with all of it's advantages and features, and soon BIOS and MBR will become a legacy software.
 
 _____
 
-## Using Daemons for Scheduling
+## The Init and Systemd
 
 _____
 
-The cron is a system daemon used to run commands at a scheduled time. It will run any command specified in /etc/crontab file, with the following format:
+The init is the "First processes" which also means that every other process is a child of init. Its main task is to execute processes listed in /etc/inittab, like daemons, background processes, and user-level services. Init also controls autonomous processes required by any particular systems. Init is first invoked as the last step of a boot sequence.
 
-minutes hours day_of_month month day_of_week command.
+The systemd is a software suite, which provides vast array of system components for Linux OS. It's main component is a "System and Service Manager", which is an extended init program, with various daemons, utilities and services ready to use.
 
-The 5 first argument can be supplied with an '*',  for selecting all values in that column. For example, you can run a backup of all your user accounts at 1 a.m every week with:
+_____
 
-0 1 * * 1 tar -zcf /var/backups/home.tgz /home/
+## Kernel 101
+
+_____
+
+The Linux Kernel is a Free and Open-Source, Monolithic, Modular, Multitasking, UNIX-Like OS Kernel. This means that:
+
+- Everyone can create, write, configure and compile their own Linux Kernel
+- The entire OS works in kernel space
+- Insert/Remove additional kernel modules on runtime
+- Parallel Computing & Execution
+- Is compatible with most machines, usually those already running Linux/other UNIX-based OS.
+
+A Kernel can be compiled with a minimum of critical modules(hardware drivers, input drivers, and other system drivers only) or with many extensive modules(advanced hardware like Joystick, Camera, etc) by configuring the .config file, either manually or via make menuconfig(or other commands).
+
+_____
+
+## Kernel Compiling
+
+_____
+
+So, how do we compile a Kernel? The steps are:
+
+1. Download the Kernel base at kernel.org or kambing.ui.ac.id/linux.
+
+2. Make the configuration file(choose modules to include and exclude, etc).
+
+   - An easy way to do this is to copy the config files used by the currently running kernel from 
+
+     ```
+     /boot/config-<kernel version>
+     ```
+
+     and renaming it to .config
+
+   - Then we can directly run make menuconfig and select the modules we want to include/exclude.
+
+3. Compile the Kernel
+
+   - The time it takes to compile a kernel ranges from 1-4 hours, or maybe more, depending on system performance(CPU frequency, number of cores used, etc).
+     - In my case, it ranges from 1-3 hours(The fastest is around 64 minutes). Proof:
+
+   ![proof](https://github.com/aceyoga/Sysprog-Log/blob/master/week-12/proof.jpg)
+
+   - It will first compile the kernel to its binary compiled form, and then its modules.
+
+   - In debian, we can use make-kpkg to automate the compiling process and make it easier for us to compile(make sure to install all of its dependency before using). The command used is:
+
+     ```bash
+     make-kpkg --initrd --append-to-version=<your-version-name> kernel_image kernel_headers
+     ```
+
+4. Install the kernel and its modules.
+
+   - Use make install and make modules_install to install the kernel and its modules respectively. In debian, we can use dpkg to install it. The command for debian is:
+
+     ```bash
+     dpkg -i kernel_image-<your-version-name>-i386.deb
+     dpkg -i kernel_headers-<your-version-name>-i386.deb
+     ```
+
+   - After installing, we need to update the bootloader and it's supporting driver files. This means that we need to update the initramfs and the GRUB bootloader. The command is:
+
+     ```bash
+     update-initramfs -c -k <kernel version>
+     update-grub
+     ```
+
+   - After updating, the kernel should show up in the GRUB Kernel Selection Menu.
+
+5. Restart the machine and test out the newly compiled kernel.
+
+   - At the GRUB bootloader, choose the advanced option, then select the kernel that you have just compiled and installed.
+
+   - After you logged in(The username & password is usually the same since the disk partition stores the same data for all kernels), you can check whether the kernel is yours by using uname -a. It will show something like this:
+
+     ![unamea](https://github.com/aceyoga/Sysprog-Log/blob/master/week-12/unamea.jpg)
+
+     It will show the machine name, kernel version, date time, etc.
 
 _____
 
@@ -104,23 +179,15 @@ _____
 
 _____
 
-1. Systems Programming Learning Material Slide 12-Daemons & Background Process
-2. man daemon
-3. [Daemon (computing) - Wikipedia](https://en.wikipedia.org/wiki/Daemon_(computing))
-4. https://linuxize.com/post/how-to-run-linux-commands-in-background/
-5. man systemd
-6. [Syslog - Wikipedia](https://en.wikipedia.org/wiki/Syslog)
-7. man sshd
-8. [Chapter 13. Daemon Processes - Shichao's Notes](https://notes.shichao.io/apue/ch13/)
-9. [Background process - Wikipedia](https://en.wikipedia.org/wiki/Background_process)
-10. man jobs
-11. man nohup
-12. https://phoenixnap.com/kb/disown-command-linux
-13. man setsid
-14. [Chapter 9. Process Relationships - Shichao's Notes](https://notes.shichao.io/apue/ch9/#ensuring-the-successful-call-of-setsid)
-15. man cron
-16. man crontab
-17. https://www.geeksforgeeks.org/cron-command-in-linux-with-examples/
-18. https://www.geeksforgeeks.org/how-to-setup-cron-jobs-in-ubuntu/
-19. 
+1. Systems Programming Learning Material Slide 13-Boot Sequence & Kernel Compilation
+2. [What Is UEFI, and How Is It Different from BIOS? (howtogeek.com)](https://www.howtogeek.com/56958/HTG-EXPLAINS-HOW-UEFI-WILL-REPLACE-THE-BIOS/)
+3. [What’s the Difference Between GPT and MBR When Partitioning a Drive? (howtogeek.com)](https://www.howtogeek.com/193669/whats-the-difference-between-gpt-and-mbr-when-partitioning-a-drive/)
+4. [init - Unix, Linux Command - Tutorialspoint](https://www.tutorialspoint.com/unix_commands/init.htm)
+5. [systemd - Wikipedia](https://en.wikipedia.org/wiki/Systemd)
+6. [Linux kernel - Wikipedia](https://en.wikipedia.org/wiki/Linux_kernel)
+7. [Monolithic kernel - Wikipedia](https://en.wikipedia.org/wiki/Monolithic_kernel)
+8. man make
+9. man uname
+10. man make-kpkg
+11. man time
 
