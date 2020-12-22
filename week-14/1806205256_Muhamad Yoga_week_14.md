@@ -1,177 +1,120 @@
-# System Programming Logbook Week  12
+# System Programming Logbook Week  14
 
 Muhamad Yoga Mahendra |1806205256 | System Programming - B
 
 ## Table of Content
 
-- [Booting Terminologies](Booting_Terminologies)
-- [Boot Sequence](Boot_Sequence)
-- [Customizable Startup Script](Customizable_Startup_Script)
-- [BIOS and MBR vs UEFI and GPT](BIOS_and_MBR_vs_UEFI_and_GPT)
-- [The Init and Systemd](The_Init_and_Systemd)
-- [Kernel 101](Kernel_101)
-- [Kernel Compiling](Kernel_Compiling)
+- [Commands & Programs for Modules](#Commands_&_Programs_for_Modules)
+- [Loadable Kernel Modules](#Loadable_Kernel_Modules)
+- [Audio Devices and Drivers](#Audio_Devices_and_Drivers)
+- [Advanced Linux Sound Architecture](#Advanced_Linux_Sound_Architecture)
+- [My Audio Devices, Drivers, and ALSA Setup](#My_Audio_Devices,_Drivers,_and_ALSA_Setup)
 - [References](#References)
 
 ![nama gambar](https://github.com/aceyoga/Sysprog-Log/blob/master/week-10/namafile.tipe)
 
+
+
 _________________________________________________________________________________________________________________________________________________________________________
 
-## Booting Terminologies
+## Loadable Kernel Modules
 
 _____
 
-In the booting process, there are many programs, procedures, and concepts being used. Some of the most important are:
+Loadable Kernel Modules is a module program that can be easily loaded/unloaded to a kernel at runtime. 
 
-- Loader
-  - A Program that moves bits from disk (usually) to memory and then transfers CPU control to the newly “loaded” bits (executable).
-- Bootloader
-  - Program that loads the chosen kernel from Boot Manager.
-- Boot PROM(BIOS/UEFI)
-  - Persistent code that is “already loaded” on power-up. Act as the program that manages pre-booting process.
-  - BIOS is shorthand for Basic Input/Output System. 
-  - UEFI is shorthand for Unified Extensible Firmware Interface.
-- Boot Manager
-  - The program that lets you choose which init program to use.
+_________________________________________________________________________________________________________________________________________________________________________
+
+## Commands & Programs for Modules
 
 _____
 
-## Boot Sequence
+In the process of creating kernel modules and device drivers, there are many tools used by developers. Ranging from text editor programs(vi, vim, nvim, nano, etc), to the driver installer(like dpkg). This section will briefly explain tools and commands that I used to create, and install kernel modules & device drivers.
+
+- Text Editor nano
+  - According to its man page, nano(Nano's ANOther editor) is a small and friendly editor. It copies the look and feel of Pico, but nano is a free software and also have features that the pico doesn't have. 
+  - How to use: 
+    - nano filename
+    - After the editor is shown, we can directly start editing the file, instead of manually entering insert mode like vi does. To exit, press CTRL + X, then y(to save data written to buffer to file), then enter(to save to the designated filename).
+- The make command
+  - Make is a GNU utility used to maintain groups of programs. It can be used to set up environment, get dependencies, compile programs, install programs and even do a cleanup.
+  - Before using make, we need to create a Makefile first, where the contents is used to describe relationships among the files in the group, and the commands used to perform wanted tasks.
+  - After creating a suitable Makefile, the simple use of "make" will do everything specified in the Makefile.
+  - To make a module, first we need to specify the modules to be compiled, the kernel used to compile, and other dependencies(if any) in the Makefile. Then we run make.
+- The apt-get command
+  - It is a package manager utility, used to handle the process of installing packages, dependencies, and managing installed packages. Some important commands for the apt-get utility is:
+    - update, this command resyncs the package index files from their respective sources.
+    - upgrade, this command installs the newest package of all existing packages in the system by checking the source listed in the package index files.
+    - install, this command installs the specified packages, along with its dependencies(if any).
+    - remove, this command removes the specified packages, but not removing its dependencies.
+- The dpkg and dkms command
+  - The dpkg is a special package manager intended for Debian Linux distributions, to manage(install, build, remove, configure) Debian packages.
+  - The dkms(Dynamic Kernel Module Support) is a framework that allows a kernel modules to be dynamically built for each kernel existing in a system in a simplified and organized fashion. 
 
 _____
 
-The boot sequence can be described effectively by the following picture taken from Sysprog slide 8:
-
-![bootseq](https://github.com/aceyoga/Sysprog-Log/blob/master/week-12/bootseq.jpg)
-
-In the above picture, the Boot sequence starts from the moment the power button is pressed. Then, the BIOS executes and perform a system checkup(Checking hardware health, temperature, condition, etc) before continuing to the next step. After finishing system checkup, BIOS executes the MBR(Master Boot Record, the first 512 bytes on disk). The MBR loads the first 512 bytes(GRUB stage 1), then the first 30KB of the disk which contains the file system driver(GRUB stage 1,5), and then GRUB loads the kernel selection menu from menu.lst. At this point, the user can select which kernel to use(if there are more than 1 kernel inside /boot/).
-
-After the kernel image is loaded, GRUB loads its initial RAM disk, and if the kernel isn't compiled with the required drivers it will try to find all needed drivers from driver collections stored in RAM disk, in which the file is named initrd/initramfs. Some of the modules stored inside is filesystem, harddisk, network adapters, input devices, etc.
-
-When the kernel has every resource needed to start the complete OS, it mounts the ROOT filesystem to /, then it executes init on /. The init process then starts running everything written in a Startup/Boot Script(Running daemons, background services, preparing drivers, etc).
-
-Finally, after everything is done, user can now login and starts using the machine.
+## Audio Devices and Drivers
 
 _____
 
-## Customizable Startup Script
+In linux, audio drivers are usually named "snd" which is an abbreviation for "sound". In my machine, there are many sound drivers which uses the snd driver as it's dependency. For example, the snd_hda_intel drivers. Proof:
+
+![proof 1](https://github.com/aceyoga/Sysprog-Log/blob/master/week-14/proof1.png)
 
 _____
 
-The Startup Script is a special script used to "Configure" everything the kernel need to do before finishing the boot process. We can do many thing with this, some examples are:
-
-- Setting up processor frequencies(overclocking/underclocking)
-- Set kernel voltages
-- Set ondemand scheduler parameters
-- Start system/user made daemons(cron, apache, sshd, systemd, etc)
-- Load additional kernel modules
-- Turn on additional swapping partitions
-- Mount additional partitions(/home, /usr, /var, /mount, /etc, etc)
-- Run custom made programs
-- Etc
-
-Before tempering with a Startup Script, it's best to do a backup beforehand, to prevent unwanted consequences(kernel failing to load, panicking, etc).
-
-## BIOS and MBR vs UEFI and GPT
+## Advanced Linux Sound Architecture
 
 _____
 
-BIOS is shorthand of Basic Input Output System. A low-level software used as the proven software for starting up booting sequence. The BIOS runs a Power-On Self Test upon machine power-on, checking every hardware is healthly, working properly, and is correctly configured. After checking everything and makes sure it's right, BIOS looks for a Master Boot Record and used it to run the bootloader of the machine's currently installed OS.
+The Advanced Linux Sound Architecture(ALSA) is a software framework that provides an interface in the form of device drivers, which enables audio and MIDI functionality to the Linux OS and its distributions. ALSA has the following significant features:
 
-The UEFI(Unified Extensible Firmware Interface) is the replacement software to the BIOS. It's not limited by BIOS limitations, like 16-bit processor mode requirement, 1MB of execution space, etc. The UEFI standard can boot from drives with sizes larger than 2.2 TB, with the theoretical limit reaching 9.4 zettabytes. This feat is achieved by the use of GPT(GUID Partition Table) Partitioning Scheme(Instead of BIOS's MBR partitioning scheme). UEFI can run in 32-bit/64-bit processor mode and has faster boot process time than BIOS. Some UEFI screens has a interactable GUI, even if most PC/Laptop still have text-based one.
+- Efficient support for all types of audio interfaces, from customer(End-User) sound cards to professional multichannel audio interfaces.
+- Fully modularized sound drivers.
+- SMP and thread-safe design.
+- An User-space function library(alsa-lib) to simplify application programming and provide high level functionality to users and programs in the user space.
+- Provides support for the older Open Sound System(OSS) API, providing binary compatibility for most OSS programs.
 
-In short, UEFI and GPT will replace BIOS and MBR with all of it's advantages and features, and soon BIOS and MBR will become a legacy software.
+To install ALSA in a linux system, simply run the package manager(apt-get in this example) along with it's packages:
 
-_____
+sudo apt-get install alsa alsa-base alsa-utils alsa-tools libasound2
 
-## The Init and Systemd
+To use it's driver interface(example: to increase/decrease sound volume) we can use the alsamixer program. The alsamixer is a soundcard mixer for ALSA soundcard drivers, and it uses ncurses interface as it's UI. It supports multiple soundcards with multiple devices.
 
-_____
+In my machine, it looks like this:
 
-The init is the "First processes" which also means that every other process is a child of init. Its main task is to execute processes listed in /etc/inittab, like daemons, background processes, and user-level services. Init also controls autonomous processes required by any particular systems. Init is first invoked as the last step of a boot sequence.
+![alsamixer](https://github.com/aceyoga/Sysprog-Log/blob/master/week-14/alsamixer1.png)
 
-The systemd is a software suite, which provides vast array of system components for Linux OS. It's main component is a "System and Service Manager", which is an extended init program, with various daemons, utilities and services ready to use.
-
-_____
-
-## Kernel 101
-
-_____
-
-The Linux Kernel is a Free and Open-Source, Monolithic, Modular, Multitasking, UNIX-Like OS Kernel. This means that:
-
-- Everyone can create, write, configure and compile their own Linux Kernel
-- The entire OS works in kernel space
-- Insert/Remove additional kernel modules on runtime
-- Parallel Computing & Execution
-- Is compatible with most machines, usually those already running Linux/other UNIX-based OS.
-
-A Kernel can be compiled with a minimum of critical modules(hardware drivers, input drivers, and other system drivers only) or with many extensive modules(advanced hardware like Joystick, Camera, etc) by configuring the .config file, either manually or via make menuconfig(or other commands).
+In order to use the microphone, we can use the arecord program to record the microphone input. To play sound files(WAV files, etc) we can use aplay program. To use both programs, just type the program name followed by the target filename and it's parameter settings.
 
 _____
 
-## Kernel Compiling
+## My Audio Devices, Drivers, and ALSA Setup
 
 _____
 
-So, how do we compile a Kernel? The steps are:
+My Linux system using the sysprog-ova image, has the following setup:
 
-1. Download the Kernel base at kernel.org or kambing.ui.ac.id/linux.
+- Sound Card: HDA Intel
+- Sound Chip: SigmaTel STAC9221 A1
+- Sound Capture devices:
+  - By using arecord -l, the output is:
 
-2. Make the configuration file(choose modules to include and exclude, etc).
+```
+**** List of CAPTURE Hardware Devices ****
+card 0: Intel [HDA Intel], device 0: STAC9221 A1 Analog [STAC9221 A1 Analog]
+  Subdevices: 0/1
+  Subdevice #0: subdevice #0
+card 0: Intel [HDA Intel], device 1: STAC9221 A1 Digital [STAC9221 A1 Digital]
+  Subdevices: 1/1
+  Subdevice #0: subdevice #0
+card 0: Intel [HDA Intel], device 2: STAC9221 A1 Alt Analog [STAC9221 A1 Alt Analog]
+  Subdevices: 1/1
+  Subdevice #0: subdevice #0
+```
 
-   - An easy way to do this is to copy the config files used by the currently running kernel from 
-
-     ```
-     /boot/config-<kernel version>
-     ```
-
-     and renaming it to .config
-
-   - Then we can directly run make menuconfig and select the modules we want to include/exclude.
-
-3. Compile the Kernel
-
-   - The time it takes to compile a kernel ranges from 1-4 hours, or maybe more, depending on system performance(CPU frequency, number of cores used, etc).
-     - In my case, it ranges from 1-3 hours(The fastest is around 64 minutes). Proof:
-
-   ![proof](https://github.com/aceyoga/Sysprog-Log/blob/master/week-12/proof.jpg)
-
-   - It will first compile the kernel to its binary compiled form, and then its modules.
-
-   - In debian, we can use make-kpkg to automate the compiling process and make it easier for us to compile(make sure to install all of its dependency before using). The command used is:
-
-     ```bash
-     make-kpkg --initrd --append-to-version=<your-version-name> kernel_image kernel_headers
-     ```
-
-4. Install the kernel and its modules.
-
-   - Use make install and make modules_install to install the kernel and its modules respectively. In debian, we can use dpkg to install it. The command for debian is:
-
-     ```bash
-     dpkg -i kernel_image-<your-version-name>-i386.deb
-     dpkg -i kernel_headers-<your-version-name>-i386.deb
-     ```
-
-   - After installing, we need to update the bootloader and it's supporting driver files. This means that we need to update the initramfs and the GRUB bootloader. The command is:
-
-     ```bash
-     update-initramfs -c -k <kernel version>
-     update-grub
-     ```
-
-   - After updating, the kernel should show up in the GRUB Kernel Selection Menu.
-
-5. Restart the machine and test out the newly compiled kernel.
-
-   - At the GRUB bootloader, choose the advanced option, then select the kernel that you have just compiled and installed.
-
-   - After you logged in(The username & password is usually the same since the disk partition stores the same data for all kernels), you can check whether the kernel is yours by using uname -a. It will show something like this:
-
-     ![unamea](https://github.com/aceyoga/Sysprog-Log/blob/master/week-12/unamea.jpg)
-
-     It will show the machine name, kernel version, date time, etc.
+- Device Drivers:
+  - snd, snd_hda_intel, etc.
 
 _____
 
@@ -179,15 +122,21 @@ _____
 
 _____
 
-1. Systems Programming Learning Material Slide 13-Boot Sequence & Kernel Compilation
-2. [What Is UEFI, and How Is It Different from BIOS? (howtogeek.com)](https://www.howtogeek.com/56958/HTG-EXPLAINS-HOW-UEFI-WILL-REPLACE-THE-BIOS/)
-3. [What’s the Difference Between GPT and MBR When Partitioning a Drive? (howtogeek.com)](https://www.howtogeek.com/193669/whats-the-difference-between-gpt-and-mbr-when-partitioning-a-drive/)
-4. [init - Unix, Linux Command - Tutorialspoint](https://www.tutorialspoint.com/unix_commands/init.htm)
-5. [systemd - Wikipedia](https://en.wikipedia.org/wiki/Systemd)
-6. [Linux kernel - Wikipedia](https://en.wikipedia.org/wiki/Linux_kernel)
-7. [Monolithic kernel - Wikipedia](https://en.wikipedia.org/wiki/Monolithic_kernel)
-8. man make
-9. man uname
-10. man make-kpkg
-11. man time
+1. Systems Programming Learning Material Slide 21 - Writing Drivers
+2. https://en.wikipedia.org/wiki/Loadable_kernel_module
+3. man nano
+4. man make
+5. man apt-get
+6. man dpkg
+7. man dkms
+8. https://www.alsa-project.org/wiki/Main_Page
+9. https://en.wikipedia.org/wiki/Advanced_Linux_Sound_Architecture
+10. http://howto.blbosti.com/2010/03/ubuntu-server-install-alsa-sound-and-moc-music-on-console/
+11. https://wiki.ubuntu.com/Audio/UpgradingAlsa/DKMS
+12. https://www.kernel.org/doc/html/latest/sound/index.html
+13. https://www.kernel.org/doc/html/latest/sound/kernel-api/index.html
+14. https://www.kernel.org/doc/html/latest/sound/hd-audio/models.html#stac9220-9221
+15. man alsamixer
+16. man arecord
+17. man aplay
 
