@@ -11,10 +11,6 @@ Muhamad Yoga Mahendra |1806205256 | System Programming - B
 - [My Audio Devices, Drivers, and ALSA Setup](#My_Audio_Devices,_Drivers,_and_ALSA_Setup)
 - [References](#References)
 
-![nama gambar](https://github.com/aceyoga/Sysprog-Log/blob/master/week-10/namafile.tipe)
-
-
-
 _________________________________________________________________________________________________________________________________________________________________________
 
 ## Loadable Kernel Modules
